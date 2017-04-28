@@ -105,7 +105,7 @@ Node* minimax(OthelloBoard* b, Move* m, bool maximizing_player, char symbol) {
     auto clone = new OthelloBoard(*b);
     clone->play_move(m->col, m->row, symbol);
 
-    auto v = minimax(b, m, true, opponent_symbol); 
+    auto v = minimax(clone, m, true, opponent_symbol); 
     best_value = (best_value->score < v->score) ? best_value : v; 
   });
   return best_value;
@@ -120,9 +120,6 @@ MinimaxPlayer::~MinimaxPlayer() {
 void MinimaxPlayer::get_move(OthelloBoard* b, int& col, int& row) {
   // Run minimax on tree
   auto result = minimax(b, NULL, true, this->symbol);
-
-  result->print();
-  exit(-1);
 
   // assign col and row
   col = result->move->col;
