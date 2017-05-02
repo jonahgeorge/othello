@@ -14,6 +14,40 @@
 
 using std::vector;
 
+class Move {
+  public:
+    int col;
+    int row;
+
+    Move(int c, int r) {
+      this->col = c;
+      this->row = r;
+    }
+};
+
+class Node {
+  public:
+    Move* move;
+    int score;
+
+    Node(Move* m, int s) {
+      this->move = m;
+      this->score = s;
+    }
+};
+
+class BoardMove {
+  public:
+
+    Move* move;
+    OthelloBoard* board;
+
+    BoardMove(OthelloBoard* board, Move* move) {
+      this->board = board;
+      this->move = move;
+    }
+};
+
 /**
  * This class represents an AI player that uses the Minimax algorithm to play
  * the game intelligently.
@@ -45,7 +79,10 @@ class MinimaxPlayer : public Player {
     MinimaxPlayer* clone();
 
   private:
+    int heuristic(OthelloBoard* b);
+    vector<BoardMove*> successor(OthelloBoard* b, char symbol);
+    Node* minimax(OthelloBoard* board, bool maximizing_player, char symbol);
+    static char negate_symbol(char s);
 };
-
 
 #endif
