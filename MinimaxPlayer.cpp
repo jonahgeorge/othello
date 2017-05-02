@@ -16,57 +16,44 @@ using std::for_each;
 
 class Move {
   public:
-  int col;
-  int row;
+    int col;
+    int row;
 
-  Move();
-  Move(int c, int r);
-  void print();
+    Move(int c, int r) {
+      this->col = c;
+      this->row = r;
+    }
 };
-
-Move::Move() {
-}
-
-Move::Move(int c, int r) {
-  this->col = c;
-  this->row = r;
-}
-
-void Move::print() {
-  std::cout << "Move: " << this->col << "," << this->row << std::endl;
-}
 
 class Node {
   public:
-  Move* move;
-  int score;
+    Move* move;
+    int score;
 
-  Node();
-  Node(Move* m, int s);
-  void print();
+    Node(Move* m, int s) {
+      this->move = m;
+      this->score = s;
+    }
 };
 
-Node::Node() {
-}
+class BoardMove {
+  public:
 
-Node::Node(Move* m, int s) {
-  this->move = m;
-  this->score = s;
-}
+    Move* move;
+    OthelloBoard* board;
 
-void Node::print() {
-  this->move->print();
-  std::cout << "Score: " << this->score << std::endl;
-}
+    BoardMove(OthelloBoard* board, Move* move) {
+      this->board = board;
+      this->move = move;
+    }
+};
 
 int heuristic(OthelloBoard* b) {
   return b->count_score('O') - b->count_score('X');
 }
 
-typedef std::tuple<OthelloBoard*, Move*> BoardMove; 
-
-vector<BoardMove> successor(OthelloBoard* b, char symbol) {
-  vector<BoardMove> children;
+vector<BoardMove*> successor(OthelloBoard* b, char symbol) {
+  vector<BoardMove*> children;
 
   for (int c = 0; c < b->get_num_cols(); c++) {
     for (int r = 0; r < b->get_num_rows(); r++) {
@@ -74,7 +61,7 @@ vector<BoardMove> successor(OthelloBoard* b, char symbol) {
         auto move = new Move(c,r);
         auto board = new OthelloBoard(*b);
         board->play_move(move->col, move->row, symbol);
-        children.push_back(make_tuple(board, move));
+        children.push_back(new BoardMove(board, move));
       }
     }
   }
@@ -82,42 +69,40 @@ vector<BoardMove> successor(OthelloBoard* b, char symbol) {
   return children;
 }
 
-void print_successors(vector<BoardMove> ts) {
-  for_each(ts.begin(), ts.end(), [](BoardMove t) {
-    get<0>(t)->display();
-  });
-}
-
-// TODO Fix heuristic
-// TODO Fix symbol passing into minimax
-Node* minimax(OthelloBoard* b, bool maximizing_player, char symbol) {
-  auto successors = successor(b, symbol);
+Node* minimax(OthelloBoard* board, bool maximizing_player, char symbol) {
+  auto successors = successor(board, symbol);
   auto opponent_symbol = (symbol == 'X') ? 'O' : 'X';
 
   if (successors.empty()) {
-    auto value = heuristic(b);
+    auto value = heuristic(board);
     return new Node(NULL, value); 
   }
 
   if (maximizing_player) {
     // Maximizing Player
     auto best_value = new Node(NULL, -999); 
-    for_each(successors.begin(), successors.end(), 
-        [b, &best_value, opponent_symbol](BoardMove t) mutable {
-          auto v = minimax(get<0>(t), false, opponent_symbol); 
-          // best_value = (v->score > best_value->score) ? v : best_value;
-          best_value = (v->score > best_value->score) ? new Node(get<1>(t), v->score) : best_value;
-        });
+
+    for_each(successors.begin(), successors.end(), [board, &best_value, opponent_symbol](BoardMove* bm) mutable {
+      auto v = minimax(bm->board, false, opponent_symbol); 
+
+      if (v->score > best_value->score) 
+        best_value = new Node(bm->move, v->score);
+    });
+
     return best_value; 
-  } else {
+  }
+
+  {
     // Minimizing Player
     auto best_value = new Node(NULL, 999);
-    for_each(successors.begin(), successors.end(), 
-        [b, &best_value, opponent_symbol](BoardMove t) mutable {
-          auto v = minimax(get<0>(t), true, opponent_symbol); 
-          // best_value = (v->score < best_value->score) ? v : best_value;
-          best_value = (v->score < best_value->score) ? new Node(get<1>(t), v->score) : best_value;
-        });
+
+    for_each(successors.begin(), successors.end(), [board, &best_value, opponent_symbol](BoardMove* bm) mutable {
+      auto v = minimax(bm->board, true, opponent_symbol); 
+
+      if (v->score < best_value->score) 
+        best_value = new Node(bm->move, v->score);
+    });
+
     return best_value;
   }
 }
@@ -125,8 +110,6 @@ Node* minimax(OthelloBoard* b, bool maximizing_player, char symbol) {
 void MinimaxPlayer::get_move(OthelloBoard* b, int& col, int& row) {
   // Run minimax on tree
   auto result = minimax(b, true, this->symbol);
-
-  result->print();
 
   // assign col and row
   col = result->move->col;
