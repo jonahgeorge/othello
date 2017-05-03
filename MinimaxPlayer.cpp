@@ -11,7 +11,7 @@
 using std::vector;
 
 int MinimaxPlayer::heuristic(OthelloBoard* b) {
-  return b->count_score(this->symbol) - b->count_score(this->negate_symbol(this->symbol));
+  return b->count_score(symbol);
 }
 
 vector<BoardMove*> MinimaxPlayer::successor(OthelloBoard* b, char symbol) {
@@ -37,25 +37,25 @@ char MinimaxPlayer::negate_symbol(char s) {
 
 Node* MinimaxPlayer::minimax(OthelloBoard* board, bool maximizing_player, char symbol) {
   auto successors = successor(board, symbol);
-  auto opponent_symbol = this->negate_symbol(symbol);
+  auto opponent_symbol = negate_symbol(symbol);
 
   if (successors.empty()) {
-    auto value = this->heuristic(board);
-    return new Node(NULL, value); 
+    auto value = heuristic(board);
+    return new Node(NULL, value);
   }
 
   if (maximizing_player) {
     // Maximizing Player
-    auto best_value = new Node(NULL, -999); 
+    auto best_value = new Node(NULL, -999);
 
     for (vector<BoardMove*>::iterator bm = successors.begin(); bm != successors.end(); bm++) {
-      auto v = this->minimax((*bm)->board, false, opponent_symbol); 
+      auto v = minimax((*bm)->board, false, opponent_symbol);
 
-      if (v->score > best_value->score) 
+      if (v->score > best_value->score)
         best_value = new Node((*bm)->move, v->score);
     }
 
-    return best_value; 
+    return best_value;
   }
 
   {
@@ -63,9 +63,9 @@ Node* MinimaxPlayer::minimax(OthelloBoard* board, bool maximizing_player, char s
     auto best_value = new Node(NULL, 999);
 
     for (vector<BoardMove*>::iterator bm = successors.begin(); bm != successors.end(); bm++) {
-      auto v = this->minimax((*bm)->board, true, opponent_symbol); 
+      auto v = minimax((*bm)->board, true, opponent_symbol);
 
-      if (v->score < best_value->score) 
+      if (v->score < best_value->score)
         best_value = new Node((*bm)->move, v->score);
     }
 
@@ -75,7 +75,7 @@ Node* MinimaxPlayer::minimax(OthelloBoard* board, bool maximizing_player, char s
 
 void MinimaxPlayer::get_move(OthelloBoard* b, int& col, int& row) {
   // Run minimax on tree
-  auto result = this->minimax(b, true, this->symbol);
+  auto result = minimax(b, true, symbol);
 
   // assign col and row
   col = result->move->col;
